@@ -2,9 +2,75 @@
 <html>
 <head>
     <title>OpenAir Generator</title>
+    <style>
+        #progress-container {
+            width: 80%;
+            background-color: #ddd;
+            margin: 20px auto;
+            height: 25px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #4CAF50;
+            text-align: center;
+            color: white;
+            line-height: 25px;
+        }
+    </style>
+    <script>
+        async function gerarArquivo() {
+            const status = document.getElementById('status');
+            const progressBar = document.getElementById('progress-bar');
+
+            function atualizarProgresso(porcentagem, texto) {
+                progressBar.style.width = porcentagem + "%";
+                progressBar.innerText = texto;
+                status.innerText = "Etapa: " + texto;
+            }
+
+            atualizarProgresso(10, "Iniciando...");
+
+            try {
+                atualizarProgresso(30, "Solicitando processamento no servidor...");
+                const response = await fetch('/gerar');
+
+                if (!response.ok) {
+                    atualizarProgresso(100, "Erro no servidor");
+                    return;
+                }
+
+                atualizarProgresso(70, "Preparando download...");
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+
+                const data = new Date().toISOString().split('T')[0];
+                link.download = `espaco_aereo_${data}.txt`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                atualizarProgresso(100, "Concluído!");
+            } catch (e) {
+                atualizarProgresso(100, "Erro inesperado");
+                console.error(e);
+            }
+        }
+    </script>
 </head>
 <body style="text-align: center; margin-top: 50px;">
     <h1>Gerador de Espaços Aéreos - OpenAir</h1>
-    <p><a href="/gerar"><button style="padding: 10px 20px;">Gerar Arquivo</button></a></p>
+    <button onclick="gerarArquivo()" style="padding: 10px 20px;">Gerar Arquivo</button>
+
+    <div id="progress-container">
+        <div id="progress-bar">0%</div>
+    </div>
+
+    <p id="status">Status: Aguardando...</p>
 </body>
 </html>
